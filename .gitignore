@@ -1,0 +1,5 @@
+bin/
+dist/
+package/plugins/SeaLegs/SeaLegs.dll
+preview/
+releases/

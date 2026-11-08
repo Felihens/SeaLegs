@@ -1,0 +1,9 @@
+{
+  "name": "SeaLegs",
+  "version_number": "0.9.0",
+  "website_url": "https://github.com/Felihens/SeaLegs",
+  "description": "Sail together: the crew sings sea shanties as a synced choir, each player in their own voice, for up to +45% sail force. Held safely on deck. At the helm: hidden rocks outlined, wider camera, see-through sail.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2351"
+  ]
+}
