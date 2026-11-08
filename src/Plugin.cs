@@ -11,7 +11,7 @@ namespace SeaLegs
     {
         public const string GUID = "felih.SeaLegs";
         public const string NAME = "Sea Legs";
-        public const string VERSION = "0.9.0";
+        public const string VERSION = "0.10.0";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
@@ -26,7 +26,7 @@ namespace SeaLegs
         internal enum RockLook { Outline, Fill, Both }
         internal static ConfigEntry<bool> RockSilhouettes;
         internal static ConfigEntry<RockLook> RockStyle;
-        internal static ConfigEntry<float> RockRange, RockDepth, RockOpacity, RockOutlineWidth, RockAboveHeight;
+        internal static ConfigEntry<float> RockRange, RockSecondsAhead, RockMaxRange, RockDepth, RockOpacity, RockOutlineWidth, RockAboveHeight;
         internal static ConfigEntry<Color> RockColor, RockAboveColor;
 
         internal static ConfigEntry<float> CameraDistance, CameraHeight, CameraSide, CameraKeySpeed, SailOpacity;
@@ -37,6 +37,12 @@ namespace SeaLegs
         internal static ConfigEntry<int> MaxVoiceLayers;
         internal static ConfigEntry<Shanty.Voice> VoiceType;
         internal static ConfigEntry<string> DisabledSongs;
+
+        internal static ConfigEntry<bool> SideRowing;
+        internal static ConfigEntry<float> RowSpeed, MaxRowSpeed, RowAcceleration, RowSpotReach, RowSpotInset, RowEmoteSeconds;
+        internal static ConfigEntry<int> MaxRowers;
+        internal static ConfigEntry<string> RowEmote, RowAnimation;
+        internal static ConfigEntry<Color> RowSpotColor;
 
         internal static ConfigEntry<bool> DetailedLog;
         internal static Plugin Instance;
@@ -102,6 +108,10 @@ namespace SeaLegs
                 new ConfigDescription("Width of the outline in pixels.", new AcceptableValueRange<float>(1f, 6f)));
             RockRange = Config.Bind("3 - Rocks", "Range", 30f,
                 new ConfigDescription("How far around the boat to look for rocks (metres).", new AcceptableValueRange<float>(10f, 150f)));
+            RockSecondsAhead = Config.Bind("3 - Rocks", "SecondsAhead", 6f,
+                new ConfigDescription("The faster the boat, the further ahead rocks show: Range plus this many seconds of sailing in front of the bow (0 = always Range).", new AcceptableValueRange<float>(0f, 20f)));
+            RockMaxRange = Config.Bind("3 - Rocks", "MaxRange", 100f,
+                new ConfigDescription("How far ahead rocks can show at full speed (metres).", new AcceptableValueRange<float>(10f, 200f)));
             RockDepth = Config.Bind("3 - Rocks", "Depth", 3f,
                 new ConfigDescription("Show the parts of rocks from the water surface down to this depth (metres).", new AcceptableValueRange<float>(0.5f, 10f)));
             RockColor = Config.Bind("3 - Rocks", "Color", new Color(1f, 0.45f, 0.1f), "Color of rocks under the water.");
@@ -126,6 +136,28 @@ namespace SeaLegs
             SailOpacity = Config.Bind("4 - Helm view", "SailOpacity", 0.25f,
                 new ConfigDescription("How visible the sail stays while you steer (0 = invisible, 1 = normal).", new AcceptableValueRange<float>(0f, 1f)));
 
+            SideRowing = Config.Bind("5 - Side rowing", "SideRowing", true,
+                "Two spots on every boat, at the left and right edge near the middle, marked with rings on the deck. Use one to work the ropes and push the boat straight sideways toward that side. Any movement key lets go.");
+            RowSpeed = Config.Bind("5 - Side rowing", "SpeedPerRower", 1f,
+                new ConfigDescription("Sideways speed each rower adds (metres per second). Rowers on opposite sides cancel out. Used by the game that moves the boat (usually the helmsman's).", new AcceptableValueRange<float>(0.1f, 5f)));
+            MaxRowSpeed = Config.Bind("5 - Side rowing", "MaxSpeed", 2.5f,
+                new ConfigDescription("Fastest the crew can push the boat sideways (metres per second).", new AcceptableValueRange<float>(0.2f, 10f)));
+            RowAcceleration = Config.Bind("5 - Side rowing", "Acceleration", 2f,
+                new ConfigDescription("How quickly the boat picks up sideways speed (metres per second, each second).", new AcceptableValueRange<float>(0.1f, 10f)));
+            MaxRowers = Config.Bind("5 - Side rowing", "MaxRowersPerSide", 4,
+                new ConfigDescription("Most rowers counted on each side.", new AcceptableValueRange<int>(1, 10)));
+            RowSpotReach = Config.Bind("5 - Side rowing", "SpotReach", 1.4f,
+                new ConfigDescription("How close you must stand to a spot to use it (metres).", new AcceptableValueRange<float>(0.5f, 4f)));
+            RowSpotInset = Config.Bind("5 - Side rowing", "SpotInset", 0f,
+                new ConfigDescription("Move the spots toward the middle of the boat (positive) or toward the edge and its ropes (negative), in metres.", new AcceptableValueRange<float>(-1.5f, 2f)));
+            RowSpotColor = Config.Bind("5 - Side rowing", "SpotColor", new Color(0.55f, 0.9f, 1f, 0.8f), "Color of the rings on the deck.");
+            RowEmote = Config.Bind("5 - Side rowing", "RowEmote", "comehere",
+                "Emote played over and over while you row, so the hands pull the rope. Empty = none. Others: point, wave, cheer, challenge, flex.");
+            RowEmoteSeconds = Config.Bind("5 - Side rowing", "RowEmoteSeconds", 1.8f,
+                new ConfigDescription("Time between two pulls of the rope.", new AcceptableValueRange<float>(0.5f, 10f)));
+            RowAnimation = Config.Bind("5 - Side rowing", "RowAnimation", "",
+                "Pose while you hold the spot. Empty = stand, so the emote shows.");
+
             DetailedLog = Config.Bind("9 - Debug", "DetailedLog", false, "Writes details to the BepInEx log.");
 
             SongLib.Scan(System.IO.Path.GetDirectoryName(Info.Location));
@@ -135,7 +167,8 @@ namespace SeaLegs
 
         private void Update()
         {
-            if (!Enabled.Value) { HelmView.Leave(); Song.Stop(); Shanty.StopAudio(); return; }
+            if (!Enabled.Value) { HelmView.Leave(); Rowing.StopRowing(); Rowing.Clear(); Song.Stop(); Shanty.StopAudio(); return; }
+            Rowing.Update();
             Song.Update();
             Shanty.Update();
             HelmView.Update();

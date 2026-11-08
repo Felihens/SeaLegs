@@ -15,6 +15,7 @@ Download: [Thunderstore](https://thunderstore.io/c/valheim/p/DJAventuras/SeaLegs
 - **Sail force:** a postfix on `Ship.GetSailForce` multiplies the force by the number of crew members playing one of those emotes. Only the ship owner's game (the helmsman) moves the boat.
 - **Synced playlist:** each player writes the playlist they follow on their own character (ZDO keys `SeaLegs_*`), with the current song's start time in the server clock. On a boat everyone follows the oldest playlist among the players on board; whoever is first in line moves it on, the others copy it.
 - **Choir:** split songs (`name_inst` + `name_vocals`) play the instruments once on the ship and the voice on each singer, pitch-shifted by `PitchShift` (two sliding read heads over a short delay line, so the tempo stays the same) and spread a few milliseconds apart.
+- **Side rowing:** each rower writes the side on their character (ZDO `SeaLegs_row`); the ship owner adds a sideways acceleration at the centre of mass in a postfix on `Ship.CustomFixedUpdate`, so the boat slides without turning. The spots are placed by walking the deck with raycasts out to the rail.
 - **Rocks:** the collision shapes of rocks near the boat are copied to world space and drawn into stencil bits through the UI shader's clip rectangle, which keeps only the band around the water level; a full-screen pass paints the outline or the fill.
 
 ## Building

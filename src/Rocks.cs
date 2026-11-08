@@ -36,7 +36,9 @@ namespace SeaLegs
 
         private static readonly Dictionary<int, Rock> Cache = new Dictionary<int, Rock>();   // by collider id; null = not a rock
         private static readonly List<Rock> Near = new List<Rock>();
-        private static readonly Collider[] Hits = new Collider[512];
+        private static readonly Collider[] Hits = new Collider[2048];
+        private static readonly System.Reflection.FieldInfo ShipBody = HarmonyLib.AccessTools.Field(typeof(Ship), "m_body");
+        private static float _lastRange = -1f;
         private static float _nextScan;
         private static int _mask = -1;
         private static Ship _scannedFor;
@@ -71,7 +73,27 @@ namespace SeaLegs
             float water = Water();
             float depth = Plugin.RockDepth.Value;
             float above = Mathf.Max(0f, Plugin.RockAboveHeight.Value);
-            int n = Physics.OverlapSphereNonAlloc(ship.transform.position, Plugin.RockRange.Value, Hits, _mask, QueryTriggerInteraction.Ignore);
+            // faster boat = see further ahead: the extra range goes in front of the bow
+            Vector3 center = ship.transform.position;
+            float radius = Plugin.RockRange.Value;
+            Rigidbody body = ShipBody != null ? ShipBody.GetValue(ship) as Rigidbody : null;
+            if (body != null && Plugin.RockSecondsAhead.Value > 0f)
+            {
+                Vector3 v = body.linearVelocity;
+                v.y = 0f;
+                float extra = Mathf.Min(v.magnitude * Plugin.RockSecondsAhead.Value, Mathf.Max(0f, Plugin.RockMaxRange.Value - radius));
+                if (extra > 1f)
+                {
+                    center += v.normalized * (extra * 0.5f);
+                    radius += extra * 0.5f;
+                }
+                if (Plugin.DetailedLog.Value && Mathf.Abs(radius - _lastRange) > 10f)
+                {
+                    _lastRange = radius;
+                    Plugin.Log.LogInfo("[rocks] speed " + v.magnitude.ToString("0.0") + " m/s: looking " + (Plugin.RockRange.Value + extra).ToString("0") + " m ahead");
+                }
+            }
+            int n = Physics.OverlapSphereNonAlloc(center, radius, Hits, _mask, QueryTriggerInteraction.Ignore);
             Near.Clear();
             int baked = 0, whole = 0, made = 0;
             for (int i = 0; i < n; i++)

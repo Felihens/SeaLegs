@@ -62,6 +62,7 @@ namespace SeaLegs
         {
             if (!Plugin.AutoSing.Value) { reason = "AutoSing is off"; return false; }
             if (p.IsDead()) { reason = "dead"; return false; }
+            if (Rowing.IsRowing) { reason = "rowing"; _stillSince = -1f; return false; }
             if (p.GetControlledShip() != null) { reason = "you are steering"; _stillSince = -1f; return false; }
             Ship ship = Ship.GetLocalShip();
             if (ship == null || !OnBoard(ship, p)) { reason = "not on a boat"; _stillSince = -1f; return false; }

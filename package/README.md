@@ -29,8 +29,16 @@ Sailing is better together. While one player steers, the crew sings sea shanties
 ### At the helm
 
 - **Hidden rocks:** rocks up to 3 m under the water are outlined around the boat, so you can steer around them. Rocks just above the water get their own color. You can also fill them instead of outlining.
+- **The faster, the further:** at speed, rocks show further ahead of the bow (up to 100 m).
 - **Wider view:** the camera moves back and up when you take the helm. The **arrow keys** move it: left/right slide it sideways, up/down raise or lower it. The position is saved.
 - **See-through sail:** the sail turns see-through while you steer, so it doesn't block the view ahead.
+
+### Side rowing
+
+- Every boat has a spot by the rail on the **left** and on the **right**, level with the mast, marked with two pulsing rings on the deck (only crew members who aren't steering see them).
+- Stand next to one and press **E**: your character holds on where they stand and works the ropes, and the boat moves **straight sideways** toward that side, without turning. Handy to come alongside a dock or slip past a rock.
+- Each rower adds speed; rowers on opposite sides cancel out. Any movement key, or E again, lets go.
+- The helmsman's game moves the boat, so the helmsman and the rowers need the mod.
 
 ### Requirements
 
@@ -40,7 +48,7 @@ Sailing is better together. While one player steers, the crew sings sea shanties
 
 **r2modman / Thunderstore Mod Manager:** click *Install*. To install a downloaded zip, go to Settings → *Import local mod*.
 
-**Nexus Mods / Vortex:** also on Nexus Mods.
+**Nexus Mods / Vortex:** also on [Nexus Mods](https://www.nexusmods.com/valheim/mods/4906).
 
 **Manual:**
 1. Extract the zip.
@@ -67,10 +75,15 @@ Press **F1** in game (requires Configuration Manager) or edit `BepInEx/config/fe
 | DisabledSongs | empty | Songs you never want when you lead the playlist. |
 | Style | Outline | Rocks: Outline, Fill or Both. |
 | Range / Depth | 30 / 3 | How far around the boat and how deep to show rocks (metres). |
+| SecondsAhead / MaxRange | 6 / 100 | At speed, also show rocks this many seconds of sailing ahead, up to MaxRange metres. |
 | Color / AboveWaterColor | orange / yellow | Rocks under and just above the water. |
 | CameraDistance / CameraHeight | 12 / 1.5 | Camera at the helm (metres). |
 | ArrowKeysMoveCamera | on | Arrow keys move the helm camera. |
 | SeeThroughSail / SailOpacity | on / 0.25 | See-through sail at the helm. |
+| SideRowing | on | The side rowing spots. |
+| SpeedPerRower / MaxSpeed | 1 / 2.5 | Sideways speed per rower and in total (m/s). |
+| SpotInset | 0 | Move the spots toward the middle (+) or the rail (-), in metres. |
+| RowEmote | comehere | Emote played while rowing (empty = none). |
 
 ### Music credits
 
@@ -87,7 +100,7 @@ The songs come from [Pixabay](https://pixabay.com/music/) under the Pixabay Cont
 ### Notes
 
 - This mod was made with the help of AI.
-- Version 0.9: the songs and the choir are new. Please report anything odd.
+- Version 0.10: the songs, the choir and side rowing are new. Please report anything odd.
 
 ---
 
@@ -116,8 +129,16 @@ Navegar é melhor junto. Enquanto um jogador pilota, a tripulação canta canç�
 ### No leme
 
 - **Pedras escondidas:** pedras até 3 m abaixo da água ganham um contorno em volta do barco, para você desviar. Pedras logo acima da água têm cor própria. Também dá para preencher em vez de contornar.
+- **Quanto mais rápido, mais longe:** em velocidade, as pedras aparecem mais longe à frente da proa (até 100 m).
 - **Visão mais aberta:** a câmera se afasta e sobe quando você pega o leme. As **setas** do teclado movem a câmera: esquerda/direita para os lados, cima/baixo sobe e desce. A posição fica salva.
 - **Vela transparente:** a vela fica transparente enquanto você pilota, para não tapar a visão.
+
+### Remo lateral
+
+- Todo barco tem uma área junto da amurada, à **esquerda** e à **direita**, na altura do mastro, marcada com dois círculos pulsando no deck (só quem está a bordo e não está no leme vê).
+- Fique do lado de uma e aperte **E**: o personagem se segura onde está e puxa as cordas, e o barco anda **reto de lado** para aquele lado, sem girar. Bom para encostar num cais ou passar raspando por uma pedra.
+- Cada remador soma velocidade; remadores em lados opostos se anulam. Qualquer tecla de movimento, ou E de novo, solta.
+- Quem move o barco é o jogo do timoneiro, então o timoneiro e os remadores precisam do mod.
 
 ### Requisitos
 
@@ -127,7 +148,7 @@ Navegar é melhor junto. Enquanto um jogador pilota, a tripulação canta canç�
 
 **r2modman / Thunderstore Mod Manager:** clique em *Install*. Para instalar um zip baixado, use Configurações → *Import local mod*.
 
-**Nexus Mods / Vortex:** também está no Nexus Mods.
+**Nexus Mods / Vortex:** também está no [Nexus Mods](https://www.nexusmods.com/valheim/mods/4906).
 
 **À mão:**
 1. Extraia o zip.
@@ -154,10 +175,15 @@ Aperte **F1** no jogo (precisa do Configuration Manager) ou edite `BepInEx/confi
 | DisabledSongs | vazio | Músicas que você não quer quando puxa a playlist. |
 | Style | Outline | Pedras: Outline (contorno), Fill (preenchido) ou Both (os dois). |
 | Range / Depth | 30 / 3 | Distância em volta do barco e profundidade das pedras (metros). |
+| SecondsAhead / MaxRange | 6 / 100 | Em velocidade, mostra também as pedras a essa quantidade de segundos de navegação à frente, até MaxRange metros. |
 | Color / AboveWaterColor | laranja / amarelo | Pedras abaixo e logo acima da água. |
 | CameraDistance / CameraHeight | 12 / 1.5 | Câmera no leme (metros). |
 | ArrowKeysMoveCamera | ligado | As setas movem a câmera do leme. |
 | SeeThroughSail / SailOpacity | ligado / 0.25 | Vela transparente no leme. |
+| SideRowing | ligado | As áreas de remo lateral. |
+| SpeedPerRower / MaxSpeed | 1 / 2.5 | Velocidade de lado por remador e no total (m/s). |
+| SpotInset | 0 | Move as áreas para o meio (+) ou para a amurada (-), em metros. |
+| RowEmote | comehere | Emote usado enquanto rema (vazio = nenhum). |
 
 ### Créditos das músicas
 
@@ -174,4 +200,4 @@ As músicas vêm do [Pixabay](https://pixabay.com/music/), sob a Pixabay Content
 ### Observações
 
 - Este mod foi feito com ajuda de IA.
-- Versão 0.9: as músicas e o coro são novos. Avise se notar algo estranho.
+- Versão 0.10: as músicas, o coro e o remo lateral são novos. Avise se notar algo estranho.
