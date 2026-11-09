@@ -11,10 +11,12 @@ Sailing is better together. While one player steers, the crew sings sea shanties
 ### Features
 
 - **Client-side.** The server doesn't need the mod. Everyone who wants to hear the songs needs it.
-- **Crew song:** stand still on the deck for 3 seconds, or sit down, and your character starts singing and dancing. Any movement key stops it.
+- **Crew song:** press **K** (or type /vibe, /dance or /roar) to start a song. Everyone on board who stands still on the deck or sits joins in, singing and dancing. Any movement key stops you, and K again stops you until the song is over.
 - **Held on deck:** while you sing standing, you are held in place the way a bench or the mast holds you, so a bump of the boat can't throw you overboard.
 - **Faster sail:** each crew member singing adds **+15%** sail force, up to **+45%**. The helmsman's game moves the boat, so the helmsman needs the mod. Players without the mod count too when they use /vibe, /dance or /roar.
-- **Works on every boat:** raft, karve, longship and drakkar. You can also sing alone.
+- **The helmsman sings too:** while the crew sings, the helmsman sings along and counts as a singer.
+- **See it working:** at the helm, golden wind ribbons blow through a golden sail, and the wind icon glows with clinking mugs and the number of singers.
+- **Works on every boat:** raft, karve, longship and drakkar, at any sail speed. You can also sing alone.
 
 ### The song
 
@@ -64,11 +66,15 @@ Press **F1** in game (requires Configuration Manager) or edit `BepInEx/config/fe
 
 | Option | Default | What it does |
 |---|---|---|
-| AutoSing | on | Sing on your own on a boat when you stand still or sit. |
+| SingKey | K | Starts a song on the boat; press again to stop singing. |
+| AutoSing | on | Join in when someone on your boat starts a song, while you stand still or sit. |
+| HelmsmanSingsAlong | on | At the helm, sing along while the crew sings. |
+| HelmGlow | on | The golden ribbons, sail and wind icon at the helm. |
 | OnlyWhileSomeoneSteers | off | Sing only while someone else is at the helm. |
 | StandStillSeconds | 3 | How long you must stand still before you sing. |
 | BonusPerSinger / MaxBonus | 0.15 / 0.45 | Extra sail force per singer and in total. |
 | Volume | 0.6 | Volume of the crew song. |
+| InstrumentVolume | 0.5 | Volume of the instruments under the choir. |
 | VoiceType | Auto | Your voice: Bass, Baritone, Tenor, Alto, MezzoSoprano (Auto = from your character). |
 | ChoirSpreadMs | 100 | Most time between the earliest and the latest voice. |
 | GameMusicWhileSinging | 0.15 | Game music volume while the crew sings. |
@@ -100,7 +106,7 @@ The songs come from [Pixabay](https://pixabay.com/music/) under the Pixabay Cont
 ### Notes
 
 - This mod was made with the help of AI.
-- Version 0.10: the songs, the choir and side rowing are new. Please report anything odd.
+- Version 0.11: starting the song with K, the helmsman singing along and the golden glow are new. Please report anything odd.
 
 ---
 
@@ -111,10 +117,12 @@ Navegar é melhor junto. Enquanto um jogador pilota, a tripulação canta canç�
 ### Recursos
 
 - **Só no cliente.** O servidor não precisa do mod. Quem quiser ouvir as músicas precisa tê-lo.
-- **Canto da tripulação:** fique parado no deck por 3 segundos, ou sente, e o seu personagem começa a cantar e dançar. Qualquer tecla de movimento para.
+- **Canto da tripulação:** aperte **K** (ou digite /vibe, /dance ou /roar) para puxar uma música. Todo mundo a bordo parado no deck ou sentado entra junto, cantando e dançando. Qualquer tecla de movimento para você, e K de novo para você até a música acabar.
 - **Preso ao deck:** enquanto você canta em pé, fica preso no lugar do mesmo jeito que um banco ou o mastro prende, então um tranco do barco não te joga no mar.
 - **Vela mais forte:** cada tripulante cantando dá **+15%** de força na vela, até **+45%**. Quem move o barco é o jogo de quem está no leme, então ele precisa do mod. Jogadores sem o mod também contam quando usam /vibe, /dance ou /roar.
-- **Funciona em todo barco:** jangada, karve, longship e drakkar. Dá para cantar sozinho também.
+- **O timoneiro canta também:** enquanto a tripulação canta, o timoneiro canta junto e conta como cantor.
+- **Veja funcionando:** no leme, faixas de vento douradas passam por uma vela dourada, e o ícone de vento brilha com canecas brindando e o número de cantores.
+- **Funciona em todo barco:** jangada, karve, longship e drakkar, em qualquer velocidade da vela. Dá para cantar sozinho também.
 
 ### A música
 
@@ -164,11 +172,15 @@ Aperte **F1** no jogo (precisa do Configuration Manager) ou edite `BepInEx/confi
 
 | Opção | Padrão | O que faz |
 |---|---|---|
-| AutoSing | ligado | Canta sozinho no barco quando você fica parado ou senta. |
+| SingKey | K | Puxa uma música no barco; aperte de novo para parar de cantar. |
+| AutoSing | ligado | Entra junto quando alguém no barco puxa uma música, enquanto você está parado ou sentado. |
+| HelmsmanSingsAlong | ligado | No leme, canta junto enquanto a tripulação canta. |
+| HelmGlow | ligado | As faixas, a vela e o ícone de vento dourados no leme. |
 | OnlyWhileSomeoneSteers | desligado | Só canta enquanto outra pessoa está no leme. |
 | StandStillSeconds | 3 | Quanto tempo parado antes de cantar. |
 | BonusPerSinger / MaxBonus | 0.15 / 0.45 | Força extra na vela por cantor e no total. |
 | Volume | 0.6 | Volume da música. |
+| InstrumentVolume | 0.5 | Volume dos instrumentos embaixo do coro. |
 | VoiceType | Auto | Sua voz: Bass, Baritone, Tenor, Alto, MezzoSoprano (Auto = pelo personagem). |
 | ChoirSpreadMs | 100 | Tempo máximo entre a voz mais adiantada e a mais atrasada. |
 | GameMusicWhileSinging | 0.15 | Volume da música do jogo enquanto a tripulação canta. |
@@ -200,4 +212,4 @@ As músicas vêm do [Pixabay](https://pixabay.com/music/), sob a Pixabay Content
 ### Observações
 
 - Este mod foi feito com ajuda de IA.
-- Versão 0.10: as músicas, o coro e o remo lateral são novos. Avise se notar algo estranho.
+- Versão 0.11: puxar a música com K, o timoneiro cantando junto e o brilho dourado são novos. Avise se notar algo estranho.

@@ -11,12 +11,13 @@ namespace SeaLegs
     {
         public const string GUID = "felih.SeaLegs";
         public const string NAME = "Sea Legs";
-        public const string VERSION = "0.10.0";
+        public const string VERSION = "0.11.0";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
 
-        internal static ConfigEntry<bool> AutoSing, SingWhenSeated, SingStanding, CrewMessage;
+        internal static ConfigEntry<bool> AutoSing, SingWhenSeated, SingStanding, CrewMessage, HelmGlow, HelmSings, SingHint;
+        internal static ConfigEntry<KeyboardShortcut> SingKey;
         internal static ConfigEntry<string> HoldAnimation;
         internal static ConfigEntry<float> StandStillSeconds, BonusPerSinger, MaxBonus, EmoteMinSeconds, EmoteMaxSeconds;
         internal static ConfigEntry<int> VibeWeight, DanceWeight, RoarWeight;
@@ -33,7 +34,7 @@ namespace SeaLegs
         internal static ConfigEntry<bool> SeeThroughSail, CameraKeys;
 
         internal static ConfigEntry<bool> SongSound, ShowSongName;
-        internal static ConfigEntry<float> SongVolume, VoiceLayerVolume, ChoirSpreadMs, GameMusicWhileSinging, ReshuffleSeconds, SongGapSeconds, VoiceFineTune;
+        internal static ConfigEntry<float> SongVolume, InstrumentVolume, VoiceLayerVolume, ChoirSpreadMs, GameMusicWhileSinging, ReshuffleSeconds, SongGapSeconds, VoiceFineTune;
         internal static ConfigEntry<int> MaxVoiceLayers;
         internal static ConfigEntry<Shanty.Voice> VoiceType;
         internal static ConfigEntry<string> DisabledSongs;
@@ -53,8 +54,14 @@ namespace SeaLegs
             Instance = this;
             Enabled = Config.Bind("1 - General", "Enabled", true, "Turns the whole mod on or off.");
 
+            SingKey = Config.Bind("2 - Crew song", "SingKey", new KeyboardShortcut(KeyCode.K),
+                "Starts a song on the boat (typing /vibe, /dance or /roar on a boat does the same). Press it again to stop singing; you stay quiet until that song is over.");
             AutoSing = Config.Bind("2 - Crew song", "AutoSing", true,
-                "Sing automatically while you are on a boat (any boat: raft, karve, longship, drakkar) and not steering it.");
+                "Join in automatically when someone on your boat starts a song, while you sit or stand still on the deck. Nobody starts singing on their own.");
+            HelmSings = Config.Bind("2 - Crew song", "HelmsmanSingsAlong", true,
+                "At the helm you sing along while the crew sings (you count as a singer too), but you never start the song.");
+            SingHint = Config.Bind("2 - Crew song", "SingHint", true,
+                "When you get on a boat where nobody sings, show which key starts a song.");
             OnlyWhileSteered = Config.Bind("2 - Crew song", "OnlyWhileSomeoneSteers", false,
                 "Sing only while someone else is at the helm. Off = you also sing alone, or on an anchored boat.");
             SingWhenSeated = Config.Bind("2 - Crew song", "SingWhenSeated", true, "Sing while sitting on the boat.");
@@ -70,6 +77,8 @@ namespace SeaLegs
                 new ConfigDescription("Most extra sail force the song can give (0.45 = +45%).", new AcceptableValueRange<float>(0f, 3f)));
             CrewMessage = Config.Bind("2 - Crew song", "CrewMessage", true,
                 "At the helm, show a message when the number of singers changes.");
+            HelmGlow = Config.Bind("2 - Crew song", "HelmGlow", true,
+                "At the helm, show the song working: golden wind ribbons through the sail, a golden sail, and a golden wind icon with clinking mugs and the number of singers under it.");
             EmoteMinSeconds = Config.Bind("2 - Crew song", "EmoteMinSeconds", 8f, "Shortest time before switching to another dance move.");
             EmoteMaxSeconds = Config.Bind("2 - Crew song", "EmoteMaxSeconds", 16f, "Longest time before switching to another dance move.");
             VibeWeight = Config.Bind("2 - Crew song", "VibeWeight", 75, "How often the Vibe emote is picked (relative weight).");
@@ -84,6 +93,8 @@ namespace SeaLegs
                 "Your singing voice. Each singer adds a voice to the choir at their own pitch; others hear yours. Auto = picked from your character.");
             VoiceFineTune = Config.Bind("2b - Song sound", "VoiceFineTune", 0f,
                 new ConfigDescription("Move your voice up or down a little more (semitones).", new AcceptableValueRange<float>(-3f, 3f)));
+            InstrumentVolume = Config.Bind("2b - Song sound", "InstrumentVolume", 0.5f,
+                new ConfigDescription("Volume of the instruments under the choir, and of the instrumental songs, compared with the voices (1 = as recorded, 0.5 = half, so the band stays in the background). Songs that come as a single file are not changed.", new AcceptableValueRange<float>(0f, 1f)));
             VoiceLayerVolume = Config.Bind("2b - Song sound", "VoiceVolume", 1f,
                 new ConfigDescription("Volume of the singers' voices compared with the instruments. Songs that come as a single file get quieter extra voices on top.", new AcceptableValueRange<float>(0f, 1f)));
             ChoirSpreadMs = Config.Bind("2b - Song sound", "ChoirSpreadMs", 100f,
@@ -167,11 +178,17 @@ namespace SeaLegs
 
         private void Update()
         {
-            if (!Enabled.Value) { HelmView.Leave(); Rowing.StopRowing(); Rowing.Clear(); Song.Stop(); Shanty.StopAudio(); return; }
+            if (!Enabled.Value) { SongGlow.Clear(); HelmView.Leave(); Rowing.StopRowing(); Rowing.Clear(); Song.Stop(); Shanty.StopAudio(); return; }
             Rowing.Update();
             Song.Update();
             Shanty.Update();
             HelmView.Update();
+            SongGlow.Update(Steering());
+        }
+
+        private void OnGUI()
+        {
+            if (Enabled.Value) SongGlow.OnGUI();
         }
 
         private void LateUpdate()
@@ -188,7 +205,15 @@ namespace SeaLegs
         internal static Ship Steering()
         {
             Player p = Player.m_localPlayer;
-            return p != null && !p.IsDead() ? p.GetControlledShip() : null;
+            if (p == null || p.IsDead()) return null;
+            Ship s = p.GetControlledShip();
+            if (s != null) return s;
+            // fallback: the boat under you whose helm says you hold it
+            Ship local = Ship.GetLocalShip();
+            if (local != null && local.m_shipControlls != null && local.m_shipControlls.HaveValidUser()
+                && local.m_shipControlls.GetUser() == p.GetPlayerID() && p.IsAttached())
+                return local;
+            return null;
         }
     }
 }

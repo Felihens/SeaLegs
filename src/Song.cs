@@ -5,8 +5,11 @@ using UnityEngine;
 
 namespace SeaLegs
 {
-    // Crew song. While someone else steers, you sing on your own when you sit on the boat or stand still
-    // on the deck for a few seconds: your character plays the Vibe, Dance and Roar emotes in turns.
+    // Crew song. Someone starts it (the sing key, K by default, or /vibe, /dance, /roar on a boat); then the
+    // rest of the crew joins in when they sit on the boat or stand still on the deck for a few seconds:
+    // their characters play the Vibe, Dance and Roar emotes in turns. Nobody starts singing on their own.
+    // The helmsman sings along (no emote, his hands are on the helm) while the crew sings, but never starts.
+    // Pressing the key again stops you, and you stay quiet until this song is over.
     // Standing singers are held in place on the deck the same way the game holds you on a bench or at the
     // mast, so a bump of the boat can't throw them overboard. Any movement key lets go.
     // Emotes are saved on each character and seen by everyone, so the helmsman's game (which moves the
@@ -26,6 +29,16 @@ namespace SeaLegs
         private static float _nextSwitch, _stillSince = -1f;
         private static string _lastReason = "";
         private static GameObject _spot;      // where we hold a standing singer, child of the ship
+        private static bool _started;         // we started the song (key or /vibe)
+        private static bool _optOut;          // we stopped on purpose; quiet until the song is over
+        private static float _ledUntil;       // someone else is leading the song until then
+        private static Ship _boarded;         // for the hint when you get on a boat
+        private static bool _helmSinging;
+
+        // Saved on each character: 1 = sings only because others do (joined). A singer without it leads.
+        internal static readonly int JoinedKey = "SeaLegs_joined".GetStableHashCode();
+        // Saved on the helmsman: 1 = sings along at the helm.
+        internal static readonly int HelmKey = "SeaLegs_helmsing".GetStableHashCode();
 
         // helmsman side
         private static readonly Dictionary<Ship, KeyValuePair<float, int>> Counted = new Dictionary<Ship, KeyValuePair<float, int>>();
@@ -40,6 +53,9 @@ namespace SeaLegs
             ZDO zdo = Zdo(p);
             if (p == null || zdo == null) { _singing = false; DropSpot(); return; }
             if (_spot != null && !Held(p)) DropSpot();               // the player moved away (game let go)
+            Keys(p);
+            Helm(p, zdo);
+            Hint(p);
 
             string reason;
             bool want = ShouldSing(p, out reason);
@@ -52,6 +68,7 @@ namespace SeaLegs
             string current = zdo.GetString(ZDOVars.s_emote, "");
             if (_singing && current != _emote) _singing = false;   // the game or the player changed it
 
+            if (!_singing && zdo.GetInt(JoinedKey, 0) != 0) zdo.Set(JoinedKey, 0);   // own emotes lead
             if (!want) { if (_singing) Stop(); Release(p); return; }
             if (!p.IsAttached() && !Hold(p)) return;
             if (!_singing && current != "") return;                // the player is doing their own emote
@@ -60,13 +77,18 @@ namespace SeaLegs
 
         private static bool ShouldSing(Player p, out string reason)
         {
-            if (!Plugin.AutoSing.Value) { reason = "AutoSing is off"; return false; }
-            if (p.IsDead()) { reason = "dead"; return false; }
+            if (p.IsDead()) { reason = "dead"; _started = false; return false; }
             if (Rowing.IsRowing) { reason = "rowing"; _stillSince = -1f; return false; }
-            if (p.GetControlledShip() != null) { reason = "you are steering"; _stillSince = -1f; return false; }
+            if (Plugin.Steering() != null) { reason = "you are steering"; _started = false; _stillSince = -1f; return false; }
             Ship ship = Ship.GetLocalShip();
-            if (ship == null || !OnBoard(ship, p)) { reason = "not on a boat"; _stillSince = -1f; return false; }
+            if (ship == null || !OnBoard(ship, p)) { reason = "not on a boat"; _started = false; _optOut = false; _stillSince = -1f; return false; }
             if (Plugin.OnlyWhileSteered.Value && (ship.m_shipControlls == null || !ship.m_shipControlls.HaveValidUser())) { reason = "nobody is steering"; return false; }
+            if (!_started)
+            {
+                if (!Led(ship, p)) { _optOut = false; reason = "nobody is singing (the sing key starts a song)"; return false; }
+                if (_optOut) { reason = "you stopped singing; waiting for this song to end"; return false; }
+                if (!Plugin.AutoSing.Value) { reason = "AutoSing is off"; return false; }
+            }
 
             if (p.IsAttached())
             {
@@ -143,6 +165,7 @@ namespace SeaLegs
             zdo.Set(ZDOVars.s_emoteID, zdo.GetInt(ZDOVars.s_emoteID, 0) + 1);
             zdo.Set(ZDOVars.s_emote, emote);
             zdo.Set(ZDOVars.s_emoteOneshot, true);
+            zdo.Set(JoinedKey, _started ? 0 : 1);
             _emote = emote;
             _singing = true;
             float min = Mathf.Max(1f, Plugin.EmoteMinSeconds.Value), max = Mathf.Max(min, Plugin.EmoteMaxSeconds.Value);
@@ -160,6 +183,98 @@ namespace SeaLegs
             zdo.Set(ZDOVars.s_emoteID, zdo.GetInt(ZDOVars.s_emoteID, 0) + 1);
             zdo.Set(ZDOVars.s_emote, "");
             Plugin.Debug("[song] stopped");
+        }
+
+        // ------------------------------------------------------------ starting and stopping the song
+
+        // Someone else on the boat leads a song: sings without having joined (started it, used /vibe
+        // themselves, or plays without the mod). Kept a few seconds so a singer moving around doesn't end it.
+        private static bool Led(Ship ship, Player me)
+        {
+            List<Player> list = Players(ship);
+            long helmsman = ship.m_shipControlls != null ? ship.m_shipControlls.GetUser() : 0L;
+            if (list != null)
+                foreach (Player o in list)
+                {
+                    if (o == null || o == me || o.GetPlayerID() == helmsman || o.IsDead()) continue;
+                    ZDO z = Zdo(o);
+                    if (z == null || z.GetInt(JoinedKey, 0) != 0) continue;
+                    if (System.Array.IndexOf(SongEmotes, z.GetString(ZDOVars.s_emote, "")) >= 0) { _ledUntil = Time.time + 4f; break; }
+                }
+            return Time.time < _ledUntil;
+        }
+
+        private static void Keys(Player p)
+        {
+            if (!Plugin.SingKey.Value.IsDown() || HelmView.Busy()) return;
+            Toggle(p, false);
+        }
+
+        // The sing key or /vibe: start a song, or stop singing (and stay quiet until this song is over).
+        private static void Toggle(Player p, bool fromEmote)
+        {
+            if (Plugin.Steering() != null)
+            {
+                Say("At the helm you sing along when the crew sings.");
+                return;
+            }
+            Ship ship = Ship.GetLocalShip();
+            if (ship == null || !OnBoard(ship, p)) { if (!fromEmote) Say("Get on a boat to start a song."); return; }
+            if (!fromEmote && (_started || _singing))
+            {
+                _started = false;
+                _optOut = true;
+                Stop();
+                Say("You stop singing.");
+                Plugin.Debug("[song] you stopped the song (quiet until it ends)");
+                return;
+            }
+            if (_started) return;
+            _started = true;
+            _optOut = false;
+            _stillSince = Time.time - 100f;   // no waiting: the song starts now
+            Say(Led(ship, p) ? "You join the song!" : "You start a song!");
+            Plugin.Debug("[song] you started the song");
+        }
+
+        // /vibe, /dance and /roar on a boat start the crew song (the game would refuse them while seated).
+        [HarmonyPatch(typeof(Player), "StartEmote"), HarmonyPrefix]
+        private static bool StartEmote(Player __instance, string emote, ref bool __result)
+        {
+            if (!Plugin.Enabled.Value || __instance != Player.m_localPlayer || System.Array.IndexOf(SongEmotes, emote) < 0) return true;
+            Ship ship = Ship.GetLocalShip();
+            if (ship == null || !OnBoard(ship, __instance) || Plugin.Steering() != null) return true;
+            Toggle(__instance, true);
+            __result = true;
+            return false;
+        }
+
+        // A hint once each time you get on a boat where nobody sings.
+        private static void Hint(Player p)
+        {
+            Ship ship = Ship.GetLocalShip();
+            bool on = ship != null && OnBoard(ship, p);
+            if (!on) { _boarded = null; return; }
+            if (ship == _boarded) return;
+            _boarded = ship;
+            if (!Plugin.SingHint.Value || Plugin.Steering() != null || Led(ship, p)) return;
+            Say("Press " + Plugin.SingKey.Value + " (or type /vibe) to start a sea shanty.");
+        }
+
+        // The helmsman sings along while the crew sings (saved on his character, so everyone's game counts him).
+        private static void Helm(Player p, ZDO zdo)
+        {
+            Ship ship = Plugin.Steering();
+            bool sing = ship != null && Plugin.HelmSings.Value && Led(ship, p);
+            if (sing == _helmSinging && zdo.GetInt(HelmKey, 0) == (sing ? 1 : 0)) return;
+            _helmSinging = sing;
+            zdo.Set(HelmKey, sing ? 1 : 0);
+            Plugin.Debug("[song] " + (sing ? "you sing along at the helm" : "you stop singing at the helm"));
+        }
+
+        private static void Say(string msg)
+        {
+            if (MessageHud.instance != null) MessageHud.instance.ShowMessage(MessageHud.MessageType.TopLeft, msg);
         }
 
         internal static ZDO Zdo(Character c)
@@ -192,10 +307,9 @@ namespace SeaLegs
             if (list != null)
                 foreach (Player p in list)
                 {
-                    if (p == null || p.GetPlayerID() == helmsman || p.IsDead()) continue;
+                    if (p == null || p.IsDead()) continue;
                     ZDO z = Zdo(p);
-                    if (z == null) continue;
-                    if (System.Array.IndexOf(SongEmotes, z.GetString(ZDOVars.s_emote, "")) >= 0) n++;
+                    if (z != null && Sings(p, z, helmsman)) n++;
                 }
             if (Counted.Count > 20) Counted.Clear();
             Counted[ship] = new KeyValuePair<float, int>(Time.time, n);
@@ -212,11 +326,18 @@ namespace SeaLegs
             if (list != null)
                 foreach (Player p in list)
                 {
-                    if (p == null || p.GetPlayerID() == helmsman || p.IsDead()) continue;
+                    if (p == null || p.IsDead()) continue;
                     ZDO z = Zdo(p);
-                    if (z != null && System.Array.IndexOf(SongEmotes, z.GetString(ZDOVars.s_emote, "")) >= 0) SingerBuf.Add(p);
+                    if (z != null && Sings(p, z, helmsman)) SingerBuf.Add(p);
                 }
             return SingerBuf;
+        }
+
+        // The crew sings with an emote; the helmsman sings along without one.
+        private static bool Sings(Player p, ZDO z, long helmsman)
+        {
+            if (p.GetPlayerID() == helmsman) return z.GetInt(HelmKey, 0) == 1;
+            return System.Array.IndexOf(SongEmotes, z.GetString(ZDOVars.s_emote, "")) >= 0;
         }
 
         internal static float Bonus(int singers)
@@ -238,6 +359,28 @@ namespace SeaLegs
                 _lastBonusLog = Time.time;
                 Plugin.Log.LogInfo("[song] " + n + " singing, sail force +" + Mathf.RoundToInt(bonus * 100f) + "%");
             }
+        }
+
+        // At speed 1 (paddling, sail down) the boat is pushed by m_backwardForce instead of the sail:
+        // the song makes that push stronger too, for the length of the ship's physics step.
+        internal const int SlowSpeed = 2;   // Ship.Speed: Stop 0, Back 1, Slow 2, Half 3, Full 4
+
+        [HarmonyPatch(typeof(Ship), "CustomFixedUpdate"), HarmonyPrefix]
+        private static void SlowPre(Ship __instance, out float __state)
+        {
+            __state = -1f;
+            if (!Plugin.Enabled.Value || (int)__instance.GetSpeedSetting() != SlowSpeed) return;
+            int n = Singers(__instance);
+            if (n <= 0) return;
+            __state = __instance.m_backwardForce;
+            __instance.m_backwardForce *= 1f + Bonus(n);
+        }
+
+        // a finalizer runs even if the game's method throws, so the force is always put back
+        [HarmonyPatch(typeof(Ship), "CustomFixedUpdate"), HarmonyFinalizer]
+        private static void SlowFinal(Ship __instance, float __state)
+        {
+            if (__state >= 0f) __instance.m_backwardForce = __state;
         }
 
         // The helmsman sees how many are singing.

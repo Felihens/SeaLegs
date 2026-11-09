@@ -393,7 +393,9 @@ namespace SeaLegs
             }
             else if (_main != null && _fade <= 0.001f && _main.isPlaying) _main.Stop();
 
-            if (_main != null) _main.volume = _fade;
+            // the instruments under the choir (split songs) and the instrumental breaks have their own volume
+            float inst = track != null && (track.Split || !track.Sung) ? Mathf.Clamp01(Plugin.InstrumentVolume.Value) : 1f;
+            if (_main != null) _main.volume = _fade * inst;
             // Split songs: every singer sings the voice. One-file songs: quieter copies of the whole song.
             AudioClip voice = null;
             if (inside && track.Sung && _fade > 0.001f) voice = track.Split ? SongLib.Voice(track) : clip;

@@ -96,7 +96,7 @@ namespace SeaLegs
             }
         }
 
-        private static bool Busy()
+        internal static bool Busy()
         {
             return (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || Menu.IsVisible() ||
                    InventoryGui.IsVisible() || TextInput.IsVisible() || Minimap.IsOpen();
@@ -149,6 +149,16 @@ namespace SeaLegs
                 foreach (Material m in s.SeeThrough) if (m != null) m.color = new Color(0.85f, 0.85f, 0.85f, a);
             foreach (SailSwap s in Swaps) if (s.R != null) s.R.enabled = a > 0.001f;
             _appliedOpacity = Plugin.SailOpacity.Value;
+        }
+
+        // The song warms the see-through sail to gold (k = 0..1), see SongGlow.
+        internal static void Glow(float k)
+        {
+            if (Swaps.Count == 0) return;
+            float a = Mathf.Clamp01(Plugin.SailOpacity.Value);
+            Color c = Color.Lerp(new Color(0.85f, 0.85f, 0.85f, a), new Color(1f, 0.8f, 0.42f, Mathf.Clamp01(a + 0.12f)), Mathf.Clamp01(k));
+            foreach (SailSwap s in Swaps)
+                foreach (Material m in s.SeeThrough) if (m != null) m.color = c;
         }
 
         private static void SailOff()
