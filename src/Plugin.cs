@@ -11,7 +11,7 @@ namespace SeaLegs
     {
         public const string GUID = "felih.SeaLegs";
         public const string NAME = "Sea Legs";
-        public const string VERSION = "0.11.0";
+        public const string VERSION = "0.11.1";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;

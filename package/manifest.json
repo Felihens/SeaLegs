@@ -1,6 +1,6 @@
 {
   "name": "SeaLegs",
-  "version_number": "0.11.0",
+  "version_number": "0.11.1",
   "website_url": "https://github.com/Felihens/SeaLegs",
   "description": "Sail together: the crew sings sea shanties as a synced choir in their own voices (+45% sail force) and rows the boat straight sideways. At the helm: hidden rocks outlined further ahead at speed, wider camera, see-through sail.",
   "dependencies": [

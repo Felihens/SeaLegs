@@ -18,7 +18,21 @@ namespace SeaLegs
         private void OnAudioFilterRead(float[] data, int channels)
         {
             float r = Ratio;
-            if (channels <= 0 || Mathf.Abs(r - 1f) < 0.001f) return;
+            if (_broken || channels <= 0 || float.IsNaN(r) || float.IsInfinity(r) || Mathf.Abs(r - 1f) < 0.001f) return;
+            try { Shift(data, channels, r); }
+            catch (System.Exception e)
+            {
+                // Never let an error repeat on every audio block: play this voice unshifted from now on.
+                _broken = true;
+                Debug.LogWarning("[SeaLegs] Pitch shift turned off for this voice: " + e.Message);
+            }
+        }
+
+        private volatile bool _broken;
+
+        private void Shift(float[] data, int channels, float r)
+        {
+            if (float.IsNaN(_phase) || _phase < 0f || _phase >= Window) _phase = 0f;
             if (_buf == null || _buf.Length != channels)
             {
                 _buf = new float[channels][];
@@ -50,12 +64,15 @@ namespace SeaLegs
 
         private float Tap(float[] b, float delay)
         {
-            float pos = _write - 1f - delay;
-            while (pos < 0f) pos += Size;
-            int i = (int)pos;
-            float frac = pos - i;
-            int j = (i + 1) % Size;
-            return b[i] + (b[j] - b[i]) * frac;
+            // Split into a whole and a fraction first, then wrap the whole part as an int:
+            // wrapping a float can round up to exactly Size and run past the buffer.
+            if (float.IsNaN(delay) || float.IsInfinity(delay)) delay = 0f;
+            int whole = (int)delay;
+            float frac = delay - whole;
+            int i = ((_write - 1 - whole) % Size + Size) % Size;
+            int k = (i - 1 + Size) % Size;
+            // pos = i - frac: blend from sample i back toward sample i-1
+            return b[i] + (b[k] - b[i]) * frac;
         }
     }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.1
+- Fixed a crash that could close the game while the crew sang: the voice pitch effect could read past the end of its sound buffer. If a voice ever has a problem now, it just plays without the pitch change.
+- Corrigido um crash que podia fechar o jogo enquanto a tripulação cantava: o efeito de tom das vozes podia ler além do fim do seu buffer de som. Se uma voz tiver algum problema agora, ela só toca sem mudar o tom.
+
 ## 0.11.0
 - Someone starts the song: press K (or type /vibe, /dance or /roar on a boat) and everyone on board who stands still or sits joins in. Nobody starts singing on their own any more. K again stops you; you stay quiet until that song is over. New options `SingKey` and `SingHint` (a hint with the key when you board a boat where nobody sings).
 - The helmsman sings along while the crew sings and counts as a singer (`HelmsmanSingsAlong`), but never starts the song.
